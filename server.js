@@ -5,11 +5,25 @@ const fetch = require('node-fetch');
 
 const app = express();
 
+// 解析允許的來源列表
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(origin => origin.trim());
+
 // 配置 CORS
 app.use(cors({
-    origin: process.env.ALLOWED_ORIGIN,
+    origin: function(origin, callback) {
+        // 允許沒有 origin 的請求（例如直接開啟文件）
+        if (!origin) return callback(null, true);
+
+        // 檢查是否在允許列表中
+        if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('null')) {
+            callback(null, true);
+        } else {
+            callback(new Error('不允許的來源'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-JIRA-URL'],
+    credentials: true
 }));
 
 // 解析 JSON 請求體
@@ -53,6 +67,13 @@ app.all('/jira/*', async (req, res) => {
 
         // 發送請求到 JIRA
         const response = await fetch(targetUrl, fetchOptions);
+
+        // 如果響應不成功，拋出錯誤
+        if (!response.ok) {
+            const errorData = await response.json();
+            return res.status(response.status).json(errorData);
+        }
+
         const data = await (response.status === 204 ? Promise.resolve(null) : response.json());
 
         // 返回響應

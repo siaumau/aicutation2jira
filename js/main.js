@@ -743,8 +743,19 @@ class ApiService {
                     'X-JIRA-URL': jiraUrl
                 };
 
+                // 添加 credentials 設定
+                options.credentials = 'include';
+
                 // 發送到代理服務器
-                return fetch(`${this.proxyUrl}${proxyPath}`, options);
+                const response = await fetch(`${this.proxyUrl}${proxyPath}`, options);
+
+                // 檢查響應狀態
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `請求失敗: ${response.status}`);
+                }
+
+                return response;
             }
 
             // 其他請求直接發送
