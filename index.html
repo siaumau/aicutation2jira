@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JIRA AI 需求拆分工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/buttons.css">
+    <link rel="stylesheet" href="css/tables.css">
+
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto p-4">
+        <header class="bg-indigo-700 text-white rounded-lg shadow-lg p-6 mb-6 fade-in">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold">JIRA AI 需求拆分工具</h1>
+                    <p class="text-indigo-200 mt-1">使用 Llama-4-Maverick 模型智能拆分需求並自動創建 JIRA 卡片</p>
+                </div>
+                <div class="hidden sm:block">
+                    <div class="flex space-x-2 text-sm">
+                        <span class="px-3 py-1 bg-indigo-800 rounded-full">AI 驅動</span>
+                        <span class="px-3 py-1 bg-indigo-800 rounded-full">敏捷開發</span>
+                        <span class="px-3 py-1 bg-indigo-800 rounded-full">JIRA 整合</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 設定部分 (可收合) -->
+        <div class="bg-white rounded-lg shadow-lg mb-6 overflow-hidden border border-gray-100 fade-in">
+            <div id="settingsHeader" class="flex justify-between items-center p-4 cursor-pointer bg-gradient-to-r from-gray-50 to-white hover:bg-gray-50 transition">
+                <div class="flex items-center">
+                    <i class="fas fa-cog text-gray-500 mr-2"></i>
+                    <h2 class="text-xl font-semibold text-gray-700">API 與系統設定</h2>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span id="settingsStatus" class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full hidden">已配置</span>
+                    <i id="settingsToggleIcon" class="fas fa-chevron-down text-gray-400"></i>
+                </div>
+            </div>
+            <div id="settingsContent" class="hidden p-5 bg-gray-50 border-t">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h3 class="text-md font-medium text-gray-800 mb-3 border-b pb-2">JIRA 設定</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1" for="jiraUrl">JIRA URL</label>
+                                <input type="text" id="jiraUrl" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="https://your-domain.atlassian.net">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1" for="jiraToken">JIRA API Token</label>
+                                <input type="password" id="jiraToken" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="JIRA API Token">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1" for="jiraEmail">JIRA 電子郵件</label>
+                                <input type="email" id="jiraEmail" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="your-email@example.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1" for="jiraProject">JIRA 專案 Key</label>
+                                <input type="text" id="jiraProject" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="例如: PROJ">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h3 class="text-md font-medium text-gray-800 mb-3 border-b pb-2">AI 與 Sprint 設定</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1" for="openrouterApiKey">OpenRouter API Key</label>
+                                <input type="password" id="openrouterApiKey" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="OpenRouter API Key">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1" for="defaultAssignee">預設負責人 (可選)</label>
+                                <input type="text" id="defaultAssignee" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="使用者名稱或郵箱">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1" for="sprintId">Sprint ID</label>
+                                <div class="flex">
+                                    <input type="text" id="sprintId" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Sprint ID" readonly>
+                                    <button id="loadActiveSprint" class="ml-2 bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition flex items-center">
+                                        <i class="fas fa-sync-alt mr-1"></i> 獲取
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1" for="useProxy">
+                                    <input type="checkbox" id="useProxy" class="mr-1"> 使用代理解決 CORS 問題
+                                </label>
+                                <p class="text-xs text-gray-500 mt-1">啟用此選項使用代理服務器來解決跨域請求問題</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button id="saveSettings" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition flex items-center">
+                        <i class="fas fa-save mr-1"></i> 儲存設定
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 需求輸入部分 -->
+        <div id="requirementSection" class="bg-white rounded-lg shadow-lg p-6 mb-6 border border-gray-100 slide-up">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                <h2 class="text-xl font-semibold text-gray-800">需求描述</h2>
+            </div>
+            <textarea id="requirementInput" class="w-full h-40 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="請輸入您的需求描述...例如：我要在活動LP頁面中，添加購物車的下單功能"></textarea>
+            <div class="mt-6 flex justify-between items-center">
+                <div class="text-xs text-gray-500">
+                    <i class="fas fa-info-circle mr-1"></i> AI 使用 Meta-Llama/Llama-4-Maverick 模型進行分析
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button id="generateTasks" class="bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 transition flex items-center shadow-md">
+                        <i class="fas fa-robot mr-2"></i> 智能拆分需求
+                    </button>
+                    <div id="loadingIndicator" class="hidden items-center bg-white px-4 py-2 rounded-md border border-gray-200">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600 mr-2"></div>
+                        <span class="text-gray-700">AI 分析中...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI 思考動畫 -->
+        <div id="aiThinkingAnimation" class="hidden mb-6 rounded-lg overflow-hidden shadow-lg">
+            <div class="px-6 py-8 bg-indigo-50 border border-indigo-100">
+                <div class="flex items-center justify-center">
+                    <div class="mr-4">
+                        <div class="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center pulse">
+                            <i class="fas fa-robot text-white text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="max-w-lg">
+                        <h3 class="text-xl font-bold text-indigo-800 mb-2">AI 正在思考中...</h3>
+                        <div class="ai-thinking h-2 w-full rounded-full mb-3"></div>
+                        <p class="text-indigo-700" id="aiThinkingStep">正在分析您的需求並拆分任務</p>
+                        <p class="text-xs text-indigo-500 mt-2">Llama-4-Maverick 模型正在處理您的請求，請稍候...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 拆分結果展示部分 -->
+        <div id="tasksContainer" class="bg-white rounded-lg shadow-lg p-6 mb-6 hidden border border-gray-100 slide-up">
+            <div class="flex items-center justify-between mb-5 border-b pb-4">
+                <div class="flex items-center">
+                    <i class="fas fa-tasks text-indigo-500 mr-2"></i>
+                    <h2 class="text-xl font-semibold text-gray-800">JIRA 卡片拆分結果</h2>
+                </div>
+                <div class="text-sm bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full" id="taskCount">
+                    卡片數量: 0
+                </div>
+            </div>
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex space-x-2">
+                        <button id="selectAllTasks" class="bg-indigo-600 text-white px-3 py-2 rounded-md hover:bg-indigo-700 transition text-sm flex items-center shadow-sm">
+                            <i class="fas fa-check-double mr-1"></i> 全選
+                        </button>
+                        <button id="deselectAllTasks" class="bg-gray-600 text-white px-3 py-2 rounded-md hover:bg-gray-700 transition text-sm flex items-center shadow-sm">
+                            <i class="fas fa-times mr-1"></i> 取消全選
+                        </button>
+                        <button id="showRequirement" class="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition text-sm flex items-center shadow-sm">
+                            <i class="fas fa-eye mr-1"></i> 顯示/隱藏需求
+                        </button>
+                    </div>
+                    <button id="createJiraTasks" class="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700 transition flex items-center shadow-md">
+                        <i class="fas fa-plus-circle mr-1"></i> 建立選定的 JIRA 卡片
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto rounded-lg border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="selectAllCheckbox" class="mr-2">
+                                    選擇
+                                </div>
+                            </th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">卡片標題</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用戶故事</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">任務描述</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">驗收標準</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">估計點數</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">估計時間</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">依賴關係</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksList" class="bg-white divide-y divide-gray-200">
+                        <!-- 這裡將動態填充任務 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 結果日誌部分 -->
+        <div id="resultLog" class="bg-white rounded-lg shadow-lg p-6 mb-6 hidden border border-gray-100 slide-up">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-terminal text-gray-500 mr-2"></i>
+                <h2 class="text-xl font-semibold text-gray-800">操作日誌</h2>
+            </div>
+            <div id="logContent" class="bg-gray-50 p-4 rounded-lg border border-gray-200 h-44 overflow-y-auto font-mono text-sm">
+                <!-- 這裡將顯示操作日誌 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 載入 JS 文件 -->
+<script src="js/main.js"></script>
+</body>
+</html>
