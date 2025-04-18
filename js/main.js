@@ -368,14 +368,18 @@ class UIService {
      * 切換設定面板顯示/隱藏
      */
     toggleSettingsPanel() {
+        const isHidden = this.settingsContent.classList.contains('hidden');
+        
+        // 切換內容區域的顯示狀態
         this.settingsContent.classList.toggle('hidden');
-
-        if (this.settingsContent.classList.contains('hidden')) {
-            this.settingsToggleIcon.classList.remove('fa-chevron-down');
-            this.settingsToggleIcon.classList.add('fa-chevron-right');
-        } else {
+        
+        // 切換箭頭圖標
+        if (isHidden) {
             this.settingsToggleIcon.classList.remove('fa-chevron-right');
             this.settingsToggleIcon.classList.add('fa-chevron-down');
+        } else {
+            this.settingsToggleIcon.classList.remove('fa-chevron-down');
+            this.settingsToggleIcon.classList.add('fa-chevron-right');
         }
     }
 
@@ -398,16 +402,13 @@ class UIService {
     showSettingsConfigured(isConfigured) {
         if (isConfigured) {
             this.settingsStatus.classList.remove('hidden');
-            // 預設收合設定區域
-            setTimeout(() => {
-                this.settingsContent.classList.add('hidden');
-                this.settingsToggleIcon.classList.remove('fa-chevron-down');
-                this.settingsToggleIcon.classList.add('fa-chevron-right');
-            }, 100);
+            // 移除自動收合設定區域的邏輯，保持使用者可以自由展開/收合
         } else {
             this.settingsStatus.classList.add('hidden');
             // 預設展開設定區域
             this.settingsContent.classList.remove('hidden');
+            this.settingsToggleIcon.classList.remove('fa-chevron-right');
+            this.settingsToggleIcon.classList.add('fa-chevron-down');
         }
     }
 
@@ -1706,3 +1707,97 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // app.js  end
+
+// JIRA 統計數據
+let jiraStats = {
+    success: 0,
+    failure: 0
+};
+
+// 更新JIRA統計顯示
+function updateJiraStats() {
+    const successCount = document.getElementById('successCount');
+    const failureCount = document.getElementById('failureCount');
+    
+    if (jiraStats.success > 0) {
+        successCount.classList.remove('hidden');
+        successCount.querySelector('span').textContent = jiraStats.success;
+    }
+    
+    if (jiraStats.failure > 0) {
+        failureCount.classList.remove('hidden');
+        failureCount.querySelector('span').textContent = jiraStats.failure;
+    }
+}
+
+// 重置JIRA統計
+function resetJiraStats() {
+    jiraStats.success = 0;
+    jiraStats.failure = 0;
+    document.getElementById('successCount').classList.add('hidden');
+    document.getElementById('failureCount').classList.add('hidden');
+}
+
+// 處理JIRA卡片建立結果
+function handleJiraCreationResult(success) {
+    if (success) {
+        jiraStats.success++;
+    } else {
+        jiraStats.failure++;
+    }
+    updateJiraStats();
+}
+
+// 移除已建立的JIRA卡片
+function removeCreatedTasks() {
+    const tasksList = document.getElementById('tasksList');
+    const checkboxes = tasksList.querySelectorAll('input[type="checkbox"]:checked');
+    
+    checkboxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        if (row) {
+            row.remove();
+        }
+    });
+    
+    // 更新卡片數量
+    updateTaskCount();
+}
+
+// 重新請求需求拆分
+document.getElementById('newRequirement').addEventListener('click', () => {
+    // 清空需求輸入
+    document.getElementById('requirementInput').value = '';
+    
+    // 重置統計
+    resetJiraStats();
+    
+    // 顯示需求輸入區域
+    document.getElementById('requirementSection').classList.remove('hidden');
+    
+    // 隱藏任務列表和日誌
+    document.getElementById('tasksContainer').classList.add('hidden');
+    document.getElementById('resultLog').classList.add('hidden');
+    
+    // 滾動到頂部
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// 修改現有的建立JIRA卡片函數
+async function createJiraTasks() {
+    const selectedTasks = document.querySelectorAll('#tasksList input[type="checkbox"]:checked');
+    
+    for (const task of selectedTasks) {
+        try {
+            // 這裡是您現有的建立JIRA卡片的邏輯
+            const result = await createJiraIssue(task);
+            handleJiraCreationResult(true);
+        } catch (error) {
+            console.error('建立JIRA卡片失敗:', error);
+            handleJiraCreationResult(false);
+        }
+    }
+    
+    // 移除已建立的卡片
+    removeCreatedTasks();
+}

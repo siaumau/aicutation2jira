@@ -1,15 +1,110 @@
 # JIRA AI 需求拆分工具
 
-這是一個結合 AI 技術的 JIRA 需求拆分工具，可以幫助團隊更有效率地進行需求分析和任務拆分。
+使用 AI 大型語言模型來智能拆分需求並自動創建 JIRA 卡片的工具。
 
 ## 功能特點
 
-- 🤖 使用 AI 智能分析需求
-- 📋 自動拆分為適當大小的任務卡片
-- 🔄 支援故事點數和工時估算調整
-- 🔗 自動建立任務相依關係
-- 🌐 多語言支援（i18n）
-- 🔌 整合 JIRA API
+### 1. 系統配置
+- JIRA 設定整合
+  - JIRA URL 配置
+  - API Token 管理
+  - 專案 Key 設定
+  - 電子郵件驗證
+- AI 模型設定
+  - OpenRouter API Key 配置
+  - 支援 Meta-Llama/Llama-4-Maverick 模型
+- Sprint 管理
+  - 自動獲取當前 Sprint ID
+  - 預設任務負責人設定
+- 系統優化
+  - CORS 代理支援
+  - 設定狀態持久化
+
+### 2. 需求拆分
+- 智能需求分析
+- 自動任務拆分
+- 即時 AI 處理狀態顯示
+- 支援多層次任務依賴關係
+
+### 3. 任務管理
+- 批量任務選擇
+- 任務統計展示
+- 成功/失敗狀態追蹤
+- 自動移除已建立卡片
+- 支援重新請求需求拆分
+
+### 4. JIRA 整合
+- 自動創建 JIRA 卡片
+- 任務依賴關係建立
+- Sprint 自動關聯
+- 操作日誌記錄
+
+## 系統流程
+
+### 需求拆分流程
+```mermaid
+sequenceDiagram
+    participant User as 使用者
+    participant UI as 前端介面
+    participant AI as AI 模型
+    participant JIRA as JIRA API
+
+    User->>UI: 輸入需求描述
+    UI->>AI: 發送需求到 OpenRouter API
+    AI-->>UI: 返回拆分後的任務清單
+    UI->>User: 顯示拆分結果
+    User->>UI: 選擇要建立的卡片
+    UI->>JIRA: 建立 JIRA 卡片
+    UI->>JIRA: 建立任務依賴關係
+    JIRA-->>UI: 返回建立結果
+    UI->>User: 更新統計和狀態
+```
+
+### 卡片建立流程
+```mermaid
+flowchart TD
+    A[開始] --> B{檢查配置}
+    B -->|未配置| C[顯示錯誤]
+    B -->|已配置| D[獲取選中的任務]
+    D --> E[循環處理任務]
+    E --> F{建立 JIRA 卡片}
+    F -->|成功| G[更新成功計數]
+    F -->|失敗| H[更新失敗計數]
+    G --> I[處理依賴關係]
+    I --> J{建立關聯}
+    J -->|成功| K[更新UI]
+    J -->|失敗| L[記錄錯誤]
+    K --> M[移除已建立卡片]
+    L --> M
+    M --> N[結束]
+```
+
+## 技術棧
+- 前端：HTML5, TailwindCSS, JavaScript
+- AI：OpenRouter API (Meta-Llama/Llama-4-Maverick)
+- 整合：JIRA REST API
+- 動畫：CSS3 Animations
+
+## 最新更新
+- 新增卡片建立成功/失敗統計
+- 支援自動移除已建立的卡片
+- 添加重新請求需求拆分功能
+- 優化設定面板的展開/收合功能
+- 改進任務依賴關係的建立機制
+- 添加 OpenRouter API 相關說明和連結
+
+## 使用說明
+1. 配置必要的 API 設定
+2. 輸入需求描述
+3. 等待 AI 分析和拆分
+4. 選擇要建立的卡片
+5. 點擊建立按鈕自動創建 JIRA 卡片
+
+## 注意事項
+- 需要有效的 JIRA API Token
+- 需要 OpenRouter API Key
+- 建議使用現代瀏覽器以獲得最佳體驗
+- 如遇到 CORS 問題，可啟用代理功能
 
 ## 系統需求
 
