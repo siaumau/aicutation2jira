@@ -722,7 +722,7 @@ class ApiService {
      */
     constructor() {
         this.storageService = new StorageService();
-        this.proxyUrl = 'http://localhost:3000'; // 代理服務器地址
+        this.proxyUrl = 'http://localhost:3100'; // 代理服務器地址
     }
 
     /**

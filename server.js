@@ -88,7 +88,7 @@ app.all('/jira/*', async (req, res) => {
 });
 
 // 啟動服務器
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3100;
 app.listen(PORT, () => {
     console.log(`代理服務器運行在端口 ${PORT}`);
 });
